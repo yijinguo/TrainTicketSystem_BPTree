@@ -1,0 +1,12 @@
+*.in
+*.out
+*.dat
+*.ans
+*.o
+data/*
+build/*
+CMakeFiles/*
+*.cmake
+CMakeCache.txt
+Makefile
+output.txt
