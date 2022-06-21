@@ -179,7 +179,7 @@ public:
             // printf("%d ", timeStamp) ;
             // for (int i = 1; i <= key_cnt; i ++) printf("%s ", argument[i]) ;
             // printf("\n") ;
-            //if (!isRollback) printf("[%d] ", timeStamp) ;
+            if (!isRollback) printf("[%d] ", timeStamp) ;
             if (strcmp (argument[1], "add_user") == 0) {
                 add_user () ;
             } else if (strcmp (argument[1], "delete_user") == 0) {
