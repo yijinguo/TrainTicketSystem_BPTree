@@ -44,83 +44,6 @@ namespace Tools {
         const int sizeNode = sizeof(Node);
         const int sizeData = sizeof(DataNode);
 
-        template<class Content, int Length = 100>
-        class Queue {
-        private:
-            int total = 0;
-            struct node {
-                long long loc = 0;
-                Content value;
-                node *next = nullptr;
-                node *front = nullptr;
-                node() = default;
-                node(long long _loc, Content _value, node *_front = nullptr, node *_next = nullptr) : loc(_loc), value(_value),
-                                                                                                      next(_next), front(_front) {}
-            };
-            node *head = nullptr;
-            node *rear = nullptr;
-
-        public:
-
-            Queue(){
-                head = rear = new node;
-            }
-
-            ~Queue(){
-                node *t = head;
-                while (head != rear) {
-                    head = head->next;
-                    delete t;
-                    t = head;
-                }
-                delete head;
-            }
-
-            void push(long long x, Content value) {
-                node *newNode = new node(x, value, rear, nullptr);
-                rear = rear->next = newNode;
-                if (total == Length) {
-                    node *t = head;
-                    head = head->next;
-                    head->front = nullptr;
-                    delete t;
-                } else {
-                    total++;
-                }
-            }
-
-            node* find(long long x, Content &value) {
-                node *t = head;
-                while (t) {
-                    if (t->loc == x) {
-                        value = t->value;
-                        return t;
-                    }
-                    t = t->next;
-                }
-                return nullptr;
-            }
-
-            void modify(node *x, Content value) {
-                x->value = value;
-            }
-
-            void remove(node *x) {
-                if (x == rear) {
-                    rear = rear->front;
-                    rear->next = nullptr;
-                    delete x;
-                } else {
-                    x->front->next = x->next;
-                    x->next->front = x->front;
-                    delete x;
-                }
-                total--;
-            }
-        };
-        Queue<Node> qNode;
-        Queue<DataNode> qData;
-
     public:
 
         BPlusTree(const std::string &FN, const std::string &dataFN){
@@ -158,14 +81,14 @@ namespace Tools {
 
         bool Insert(Key index, SecondKey indexSecond, T value) {  //sameKey
             // std::cerr << "insert " << index << " " << indexSecond << " " << value << std::endl ;
-            total++;
             datafile.seekp(0, std::ios::end);
             long long newLoc = datafile.tellp();
             datafile.write(reinterpret_cast<char *>(&value), sizeT);
             Key newIndex;
             SecondKey newIndexSecond;
             long long newNodeLoc;
-            if (total == 1) {
+            if (total == 0) {
+                total++;
                 DataNode dataNode;
                 dataNode.index[0] = index;
                 dataNode.index_second[0] = indexSecond;
@@ -202,13 +125,16 @@ namespace Tools {
                 file.write(reinterpret_cast<char *>(&newRoot), sizeNode);
                 root = newRoot;
             }
-            if (exist)
+            if (exist) {
                 return false;
-            else
+            } else {
+                total++;
                 return true;
+            }
         }
 
         bool Remove(Key index, SecondKey indexSecond){
+            if (total == 0) return false;
             bool back = false, push = false;
             Key newIndex;
             SecondKey newIndexSecond;
@@ -229,32 +155,11 @@ namespace Tools {
             FindKey(root, index, value);
         }
 
-        bool find(Key index, SecondKey indexSecond, T &ans) {
-            long long Loc;
-            if (findKey(root, index, indexSecond, Loc)) {
-                datafile.seekg(Loc);
-                datafile.read(reinterpret_cast<char *>(&ans), sizeT);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        bool modify(Key index, SecondKey indexSecond, T value) {
-            long long Loc;
-            if (findKey(root, index, indexSecond, Loc)) {
-                datafile.seekp(Loc);
-                datafile.write(reinterpret_cast<char *>(&value), sizeT);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
         void clear(){
             root.num = 0;
             root.pointer[0] = -1;
             total = 0;
+            beginning = -1;
         }
 
         bool empty () {
@@ -479,7 +384,6 @@ namespace Tools {
         }
 
         bool remove(Node &now, long long nowLoc, Key index, SecondKey indexSecond, bool &back, bool &push, Key &newIndex, SecondKey &newIndexSecond){
-            if (total == 0) return false;
             int leftIndex = Tools::lower_bound(now.index, index, now.num);
             int rightIndex = Tools::upper_bound(now.index, index, now.num);
             int nextIndex = leftIndex;
@@ -829,38 +733,6 @@ namespace Tools {
                     }
                     return true;
                 }
-            }
-        }
-
-        bool findKey(Node now, Key index, SecondKey indexSecond, long long &ans){
-            int leftIndex = Tools::lower_bound(now.index, index, now.num);
-            int rightIndex = Tools::upper_bound(now.index, index, now.num);
-            int in = leftIndex;
-            if (leftIndex != rightIndex) {
-                for ( ; in < rightIndex; ++in) {
-                    if (CompareK()(indexSecond, now.index_second[in])) break;
-                }
-            }
-            long long next = now.pointer[in];
-            file.seekg(next);
-            if (!now.type) {
-                Node nextNode;
-                file.read(reinterpret_cast<char *>(&nextNode), sizeNode);
-                return findKey(nextNode, index, indexSecond, ans);
-            } else {
-                DataNode dataNode;
-                file.read(reinterpret_cast<char *>(&dataNode), sizeData);
-                int ansLeft = Tools::find_index(dataNode.index, index, dataNode.num);
-                if (ansLeft == -1) return false;
-                for (int i = ansLeft; i < dataNode.num; ++i) {
-                    if (Compare()(index, dataNode.index[i])) return false;
-                    if (CompareK()(indexSecond, dataNode.index_second[i])) return false;
-                    if (!CompareK()(dataNode.index_second[i], indexSecond)) {
-                        ans = dataNode.Loc[i];
-                        return true;
-                    }
-                }
-                return false;
             }
         }
 
