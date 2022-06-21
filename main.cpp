@@ -76,8 +76,8 @@ void init () {
 bool isExit ;
 
 int main() {
-    freopen("9.in" , "r" , stdin);
-    freopen("gyj.out", "w", stdout);
+    //freopen("9.in" , "r" , stdin);
+    //freopen("gyj.out", "w", stdout);
     // std::ios::sync_with_stdio(false) ;
     // std::cin.tie (0); std::cout.tie (0) ;
 
